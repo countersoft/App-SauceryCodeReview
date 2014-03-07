@@ -57,8 +57,9 @@
     <Reference Include="Countersoft.Gemini.Extensibility">
       <HintPath>libs\Countersoft.Gemini.Extensibility.dll</HintPath>
     </Reference>
-    <Reference Include="DiffPlex">
-      <HintPath>libs\DiffPlex.dll</HintPath>
+    <Reference Include="DiffPlex, Version=1.2.0.38654, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\DiffPlex.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.TeamFoundation.Client, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

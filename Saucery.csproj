@@ -132,7 +132,6 @@
   <ItemGroup>
     <Content Include="saucery.css" />
     <Content Include="saucery.js" />
-    <Content Include="DiffPlex.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

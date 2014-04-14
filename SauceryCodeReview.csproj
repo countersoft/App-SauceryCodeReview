@@ -7,8 +7,8 @@
     <ProjectGuid>{2F7F9DC8-7C81-4D26-8376-6CE2EE3C6295}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Saucery</RootNamespace>
-    <AssemblyName>Saucery</AssemblyName>
+    <RootNamespace>SauceryCodeReview</RootNamespace>
+    <AssemblyName>SauceryCodeReview</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

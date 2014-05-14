@@ -76,6 +76,9 @@
 </div>
 
 <script type="text/javascript">
+    $(document).ready(function () {
+
+        $("#F473D13E-19B7-45F3-98ED-6ED77B6BAB0A h3").html("Code Review (" +@Model.Value.Count +")");
 
     function removeAuthForm() {
         $('.files-expanded form').prev().remove();
@@ -364,6 +367,7 @@
             $('#app-saucery #rightPane .lineNumber').removeClass('active');
         }
 
+        });
     });
     //# sourceURL=Saucery.js
 </script>

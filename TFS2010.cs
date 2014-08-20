@@ -28,6 +28,19 @@ namespace Saucery
         
         private string Uri { get; set; }
 
+        public static bool IsBasicAuth { get; set; }
+
+        public TFS2010()
+        {
+            try
+            {
+                IsBasicAuth = System.Configuration.ConfigurationManager.AppSettings["gemini.tfs.basicauth"].ToBool();
+            }
+            catch
+            {
+            }
+        }
+
         public string GetFileContent(GeminiContext gemini, int issueid, string filename, string fullfilename, string workspace, string changesetid, string fileid, string repositoryUrl, bool getPreviousRevision = false)
         {
             ConnectByImplementingCredentialsProvider connect = new ConnectByImplementingCredentialsProvider();
@@ -41,9 +54,17 @@ namespace Saucery
             TfsConfigurationServer configurationServer = TfsConfigurationServerFactory.GetConfigurationServer(new Uri(Uri));
             
             configurationServer.Credentials = iCred;
-            
-            configurationServer.ClientCredentials = new TfsClientCredentials(new WindowsCredential(iCred));
-            
+
+
+            if (TFS2010.IsBasicAuth)
+            {
+                configurationServer.ClientCredentials = new TfsClientCredentials(new BasicAuthCredential(iCred));
+            }
+            else
+            {
+                configurationServer.ClientCredentials = new TfsClientCredentials(new WindowsCredential(iCred));
+            }
+                        
             configurationServer.EnsureAuthenticated();
 
             CatalogNode catalogNode = configurationServer.CatalogNode;
@@ -54,8 +75,11 @@ namespace Saucery
             foreach (CatalogNode tpcNode in tpcNodes)
             {
                 Guid tpcId = new Guid(tpcNode.Resource.Properties["InstanceId"]);
-                
+
                 TfsTeamProjectCollection tpc = configurationServer.GetTeamProjectCollection(tpcId);
+
+
+                if (IsBasicAuth) tpc.ClientCredentials = new TfsClientCredentials(new BasicAuthCredential(iCred));
 
                 VersionControlServer versionControl = (VersionControlServer)tpc.GetService(typeof(VersionControlServer));
 

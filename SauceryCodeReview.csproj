@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Saucery.cs" />
+    <Compile Include="Git.cs" />
     <Compile Include="TFS2010.cs" />
     <Compile Include="GitHub.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

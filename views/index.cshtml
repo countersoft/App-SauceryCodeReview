@@ -265,6 +265,21 @@
 
         });
 
+        //Authentication form
+        $(document).off('click', "#app-saucery #authentication_form #git_login").on('click', "#app-saucery #authentication_form #git_login", function (e) {
+            var url = $(this).parents("form:eq(0)").attr('action');
+
+            gemini_ajax.postCall(url, "",
+                function (response) {
+                    if (response.success) {
+                        var revisionId = $('#app-saucery .filename-container #filename').attr('data-revisionid');
+                        var filename = $('#app-saucery .filename-container #filename').val();
+
+                        $("#app-saucery .commit-info[data-revisionid='" + revisionId + "'] ").parent().next().find(".file[data-filename='" + filename + "'] ").click();
+                    }
+                }, null, $(this).parents("form:eq(0)").serialize(), null, true);
+        });
+
         $(document).on({
             mouseenter: function () {               
                 if ($('.lineNumber .commentexist', $(this)).length == 0 && $.trim($('.lineNumber', $(this)).text()) != '')

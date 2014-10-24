@@ -251,6 +251,11 @@ namespace Saucery
                     
                     tfs2010.SaveLoginDetails(CurrentUser, userData, GeminiContext);                    
                 }
+                else if (provider == SourceControlProvider.Git)
+                {
+                    Git git = new Git();
+                    git.SaveLoginDetails(CurrentUser, userData, GeminiContext);
+                }
             }
 
             return JsonSuccess(new { success = success, message = message, extraData =  extraData});
@@ -502,6 +507,34 @@ namespace Saucery
                     else
                     {
                         authenticateForm = svn.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
+                        
+                        errorMessage = "Invalid login details";
+                    }
+                }
+                else if (provider == SourceControlProvider.Git.ToString())
+                {
+                    Git git = new Git();
+
+                    if (git.AuthenticateUser(CurrentUser, repositoryUrl, GeminiContext))
+                    {
+                        try
+                        {
+                            oldFile = git.GetFileContent(GeminiContext, issueId, repositoryUrl, fileName, revisionid, true);
+
+                            newFile = git.GetFileContent(GeminiContext, issueId, repositoryUrl, fileName, revisionid);
+                            
+                            IsUserAuthorized = true;
+                        }
+                        catch (UnauthorizedAccessException ex)
+                        {
+                            authenticateForm = git.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
+                            
+                            errorMessage = "Invalid login details";
+                        }                        
+                    }
+                    else
+                    {
+                        authenticateForm = git.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
                         
                         errorMessage = "Invalid login details";
                     }

@@ -90,20 +90,20 @@
     <Reference Include="System.Net" />
     <Reference Include="System.Net.Http, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Libs\MVC\System.Net.Http.dll</HintPath>
+      <HintPath>libs\System.Net.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Libs\MVC\System.Web.Http.dll</HintPath>
+      <HintPath>libs\System.Web.Http.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Http.WebHost, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Libs\MVC\System.Web.Http.WebHost.dll</HintPath>
+      <HintPath>libs\System.Web.Http.WebHost.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Mvc, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Mvc, Version=4.0.0.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Libs\MVC\System.Web.Mvc.dll</HintPath>
+      <HintPath>libs\System.Web.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Routing" />
     <Reference Include="System.Xml.Linq" />
@@ -115,6 +115,7 @@
   <ItemGroup>
     <Compile Include="Saucery.cs" />
     <Compile Include="Git.cs" />
+    <Compile Include="Bitbucket.cs" />
     <Compile Include="TFS2010.cs" />
     <Compile Include="GitHub.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

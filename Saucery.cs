@@ -13,6 +13,7 @@ using System.Web.Routing;
 using DiffPlex.DiffBuilder;
 using System.Web.Mvc;
 using System.Web;
+using System.Web.Http;
 using RestSharp;
 using Countersoft.Gemini.Infrastructure;
 using DiffPlex.DiffBuilder.Model;
@@ -37,6 +38,13 @@ namespace Saucery
     static class DebugConstant
     {
         public static bool DebugModeState { get; set; }
+    }
+
+    public enum FileCommitType
+    {
+        Created = 1,
+        Modified = 2,
+        Deleted = 3
     }
 
     public class Comment
@@ -71,6 +79,7 @@ namespace Saucery
         public string FileId { get; set; }
         public string Workspace { get; set; }
         public string PreviousFileRevisionId { get; set; }
+        public FileCommitType Type { get; set; }
     }
 
     public class SourceControlCommit
@@ -114,7 +123,7 @@ namespace Saucery
             Comment = string.Empty;
             Items = new Dictionary<int, string>();
         }
-    }  
+    }
 
     [AppType(AppTypeEnum.Widget),
     AppGuid("F473D13E-19B7-45F3-98ED-6ED77B6BAB0A"),
@@ -185,6 +194,8 @@ namespace Saucery
             routes.MapRoute(null, "apps/saucery/addcomment/{issueid}", new { controller = "Saucery", action = "AddComment" }, new { issueid = @"\d{1,10}" });
             
             routes.MapRoute(null, "apps/saucery/getcomment/{issueid}", new { controller = "Saucery", action = "GetComment" }, new { issueid = @"\d{1,10}" });
+
+            routes.MapHttpRoute(null, "api/saucery/bitbucket/codecommit", new { controller = "SauceryBitbucket", action = "CodeCommit" }, new { httpMethod = new HttpMethodConstraint(new string[] { "POST" }) });
         }
 
         public ActionResult Authenticate(SourceControlProvider provider)
@@ -255,6 +266,11 @@ namespace Saucery
                 {
                     Git git = new Git();
                     git.SaveLoginDetails(CurrentUser, userData, GeminiContext);
+                }
+                else if (provider == SourceControlProvider.Bitbucket)
+                {
+                    Bitbucket bitbucket = new Bitbucket();
+                    bitbucket.SaveLoginDetails(CurrentUser, userData, GeminiContext);
                 }
             }
 
@@ -334,7 +350,7 @@ namespace Saucery
         }
 
         public ActionResult GetFileDiff(int issueId)
-        {      
+        {
             string newFile = string.Empty;
             
             string oldFile = string.Empty;
@@ -536,6 +552,34 @@ namespace Saucery
                     {
                         authenticateForm = git.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
                         
+                        errorMessage = "Invalid login details";
+                    }
+                }
+                else if (provider == SourceControlProvider.Bitbucket.ToString())
+                {
+                    Bitbucket bitbucket = new Bitbucket();
+
+                    if (bitbucket.AuthenticateUser(CurrentUser, repositoryUrl, GeminiContext))
+                    {
+                        try
+                        {
+                            oldFile = bitbucket.GetFileContent(GeminiContext, issueId, repositoryUrl, fileName, revisionid, true);
+
+                            newFile = bitbucket.GetFileContent(GeminiContext, issueId, repositoryUrl, fileName, revisionid);
+
+                            IsUserAuthorized = true;
+                        }
+                        catch (UnauthorizedAccessException ex)
+                        {
+                            authenticateForm = bitbucket.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
+
+                            errorMessage = "Invalid login details";
+                        }
+                    }
+                    else
+                    {
+                        authenticateForm = bitbucket.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
+
                         errorMessage = "Invalid login details";
                     }
                 }

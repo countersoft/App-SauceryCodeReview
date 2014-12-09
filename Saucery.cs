@@ -196,6 +196,8 @@ namespace Saucery
             routes.MapRoute(null, "apps/saucery/getcomment/{issueid}", new { controller = "Saucery", action = "GetComment" }, new { issueid = @"\d{1,10}" });
 
             routes.MapHttpRoute(null, "api/saucery/bitbucket/codecommit", new { controller = "SauceryBitbucket", action = "CodeCommit" }, new { httpMethod = new HttpMethodConstraint(new string[] { "POST" }) });
+            
+            routes.MapHttpRoute(null, "api/github/commit", new { controller = "GitHub", action = "Commit" });
         }
 
         public ActionResult Authenticate(SourceControlProvider provider)

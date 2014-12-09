@@ -17,6 +17,10 @@ using Countersoft.Gemini.Infrastructure.Managers;
 using Countersoft.Gemini.Commons.Dto;
 using Countersoft.Gemini.Commons.System;
 using System.IO;
+using Countersoft.Gemini.Infrastructure.Api;
+using System.Web.UI;
+using Countersoft.Gemini.Commons.Entity.Security;
+using System.Text.RegularExpressions;
 
 namespace Saucery
 {
@@ -428,5 +432,224 @@ namespace Saucery
 
     }
 
+    [ValidateInput(false)]
+    [OutputCache(Duration = 0, NoStore = false, Location = OutputCacheLocation.None)]
+    public class GitHubController : BaseApiController
+    {
+        [System.Web.Mvc.HttpPost]
+        public string Commit(CommitObject commits)
+        {
+            string apikey = string.Empty;
+            string result = string.Empty;
 
+            CurrentUser = new UserDto(new User() { ProjectGroups = new List<ProjectGroupMembership>() { new ProjectGroupMembership() { ProjectGroupId = Countersoft.Gemini.Commons.Constants.GlobalGroupAdministrators, UserId = 0 } } });
+            UserContext.User = CurrentUser;
+            PermissionsManager = PermissionsManager.Copy(CurrentUser);
+            UserContext.PermissionsManager = PermissionsManager;
+
+            if (Request.Headers.Authorization != null && Request.Headers.Authorization.Parameter != null)
+            {
+                var authDetails = Encoding.Default.GetString(Convert.FromBase64String(Request.Headers.Authorization.Parameter)).Split(':');
+                if (authDetails.Length == 2)
+                {
+                    apikey = authDetails[0];
+                }
+            }
+
+            if (apikey.Length == 0 || GeminiApp.Config.ApiKey.Length == 0 || !apikey.StartsWith(GeminiApp.Config.ApiKey, StringComparison.InvariantCultureIgnoreCase))
+            {
+                string error;
+
+                if (GeminiApp.Config.ApiKey.Length == 0)
+                {
+                    error = "Web.config is missing API key";
+                }
+                else
+                {
+                    error = "Wrong API key: " + apikey;
+                }
+
+                GeminiApp.LogException(new Exception(error) { Source = SourceControlProvider.GitHub.ToString() }, false);
+
+                return error;
+            }
+
+            if (commits == null)
+            {
+                try
+                {
+                    var body = Request.Content.ReadAsStringAsync();
+                    body.Wait();
+                    GeminiApp.LogException("Null CodeCommit", string.Concat("Null CodeCommit - ", body.Result), false);
+                }
+                catch
+                {
+                    try
+                    {
+                        GeminiApp.LogException("Null CodeCommit", "Null CodeCommit - Empty!", false);
+                    }
+                    catch
+                    {
+                    }
+                }
+                return string.Empty;
+            }
+
+            foreach (var commit in commits.commits)
+            {
+                Regex ex = new Regex("GEM:(?<issueid>[0-9]+)", RegexOptions.IgnoreCase);
+                MatchCollection matches = ex.Matches(commit.message);
+
+                if (matches.Count > 0)
+                {
+
+                    var baseUrl = commits.repository.url.ReplaceIgnoreCase("https://github.com/", "https://api.github.com/");
+
+                    List<string> filesModified = new List<string>();
+
+                    var commitIndex = commit.url.IndexOf("commit");
+                    if (commitIndex != -1)
+                    {
+                        var url = string.Concat(commit.url.Remove(commitIndex, commit.url.Length - commitIndex), "blob/master/");
+
+                        for (int i = 0; i < commit.added.Length; i++)
+                        {
+                            filesModified.Add(string.Concat("{\"Filename\":\"", commit.added[i], "\", \"FileId\":\"", string.Empty, "\",\"PreviousFileRevisionId\":\"", string.Empty, "\" }"));
+                        }
+
+                        for (int i = 0; i < commit.modified.Length; i++)
+                        {
+                            filesModified.Add(string.Concat("{\"Filename\":\"", commit.modified[i], "\",\"FileId\":\"", string.Empty, "\",\"PreviousFileRevisionId\":\"", string.Empty, "\"}"));
+                        }
+
+                        for (int i = 0; i < commit.removed.Length; i++)
+                        {
+                            filesModified.Add(string.Concat("{\"Filename\":\"", commit.removed[i], "\",\"FileId\":\"", string.Empty, "\",\"PreviousFileRevisionId\":\"", string.Empty, "\"}"));
+                        }
+                    }
+
+                    CodeCommit codeCommit = new CodeCommit();
+                    codeCommit.Provider = SourceControlProvider.GitHub;
+                    codeCommit.Comment = commit.message;
+                    codeCommit.Fullname = commit.author.name;
+                    codeCommit.Data = string.Concat("{\"RevisionId\":\"", commit.id, "\",\"PreviousRevisionId\":\"", string.Empty, "\",\"Files\":[", string.Join(",", filesModified.ToArray()), "],\"RepositoryName\":\"", commits.repository.name, "\",\"RepositoryUrl\":\"", baseUrl, "\",\"IsPrivate\":\"", commits.repository.PRIVATE, "\"}");
+
+                    commit.message = ex.Replace(commit.message, string.Empty);
+
+                    List<int> issuesAlreadyProcessed = new List<int>();
+
+                    foreach (var match in matches)
+                    {
+                        var issue = IssueManager.Get(match.ToString().Remove(0, 4).ToInt());
+
+                        if (issue != null && !issuesAlreadyProcessed.Contains(issue.Id))
+                        {
+                            codeCommit.IssueId = issue.Id;
+                            GeminiContext.CodeCommits.Create(codeCommit);
+                            issuesAlreadyProcessed.Add(issue.Id);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+        public class Author
+        {
+            public string email { get; set; }
+            public string name { get; set; }
+            public string username { get; set; }
+        }
+
+        public class Committer
+        {
+            public string email { get; set; }
+            public string name { get; set; }
+            public string username { get; set; }
+        }
+
+        public class AllCommits
+        {
+            public string[] added { get; set; }
+            public Author author { get; set; }
+            public Committer committer { get; set; }
+            public bool distinct { get; set; }
+            public string id { get; set; }
+            public string message { get; set; }
+            public string[] modified { get; set; }
+            public object[] removed { get; set; }
+            public DateTime timestamp { get; set; }
+            public string url { get; set; }
+        }
+
+        public class Repository
+        {
+            public string description { get; set; }
+            public int id { get; set; }
+            public string name { get; set; }
+            public int size { get; set; }
+            public string url { get; set; }
+            public string PRIVATE { get; set; }
+        }
+
+        public class CommitObject
+        {
+            public AllCommits[] commits { get; set; }
+            public Repository repository { get; set; }
+            public string before { get; set; }
+        }
+
+
+        public class TreeUrlChild
+        {
+            public string url { get; set; }
+            public string sha { get; set; }
+        }
+
+        public class TreeUrl
+        {
+            public TreeUrlChild tree { get; set; }
+        }
+
+        public class TreeFilesChild
+        {
+            public string type { get; set; }
+            public string url { get; set; }
+            public string path { get; set; }
+            public string mode { get; set; }
+            public string sha { get; set; }
+            public int size { get; set; }
+        }
+
+        public class TreeFiles
+        {
+            public string url { get; set; }
+            public string sha { get; set; }
+            public TreeFilesChild[] tree { get; set; }
+        }
+
+        public IRestResponse GetResponse(string url, RestSharp.Method method)
+        {
+            RestClient client = new RestClient(url);
+            RestSharp.RestRequest request = new RestSharp.RestRequest(method);
+            var response = client.Execute(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                GeminiApp.LogException(new ApplicationException(response.Content) { Source = "GitHub" }, false);
+                throw new ApplicationException(response.Content);
+            }
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                GeminiApp.LogException(new UnauthorizedAccessException(response.Content) { Source = "GitHub" }, false);
+                throw new UnauthorizedAccessException(response.Content);
+            }
+
+            return response;
+        }
+
+    }
 }

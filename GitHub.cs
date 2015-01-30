@@ -82,6 +82,8 @@ namespace Saucery
 
         }
 
+        [ValidateInput(false)]
+        [OutputCache(Duration = 0, NoStore = false, Location = OutputCacheLocation.None)]
         public class SauceryGithubController : BaseController
         {
             public ActionResult Authenticate(string code, int state)

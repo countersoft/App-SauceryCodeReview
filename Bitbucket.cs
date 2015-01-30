@@ -82,6 +82,8 @@ namespace Saucery
             public Payload payload { get; set; }
         }
 
+        [ValidateInput(false)]
+        [OutputCache(Duration = 0, NoStore = false, Location = OutputCacheLocation.None)]
         public class SauceryBitbucketController : BaseApiAppController
         {
             [System.Web.Mvc.HttpPost]

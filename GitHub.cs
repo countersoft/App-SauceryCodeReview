@@ -540,7 +540,7 @@ namespace Saucery
 
                     List<int> issuesAlreadyProcessed = new List<int>();
 
-                    foreach (var match in matches)
+                    foreach (Match match in matches)
                     {
                         var issue = IssueManager.Get(match.ToString().Remove(0, 4).ToInt());
 
@@ -549,6 +549,49 @@ namespace Saucery
                             codeCommit.IssueId = issue.Id;
                             GeminiContext.CodeCommits.Create(codeCommit);
                             issuesAlreadyProcessed.Add(issue.Id);
+
+                            try
+                            {
+                                if (match.Index + match.Length + 1 + 5 <= codeCommit.Comment.Length)
+                                {
+                                    var time = codeCommit.Comment.Substring(match.Index + match.Length + 1, 5);
+                                    var timeEx = new System.Text.RegularExpressions.Regex("[0-9][0-9]:[0-9][0-9]");
+                                    var m = timeEx.Match(time);
+                                    if (m.Success)
+                                    {
+                                        // Okay, log time!
+                                        var timeTypes = MetaManager.TimeTypeGetAll(issue.Project.TemplateId);
+                                        if (timeTypes.Count > 0)
+                                        {
+                                            // Let's try and find the user
+                                            var user = commit.author.email.HasValue() ? Cache.Users.Find(u => u.Username.Equals(commit.author.email, StringComparison.InvariantCultureIgnoreCase)
+                                                || u.Email.Equals(commit.author.email, StringComparison.InvariantCultureIgnoreCase)
+                                                || u.Fullname.Equals(commit.author.email, StringComparison.InvariantCultureIgnoreCase)) : null;
+
+                                            if (user == null)
+                                            {
+                                                user = commit.author.name.HasValue() ? Cache.Users.Find(u => u.Username.Equals(commit.author.name, StringComparison.InvariantCultureIgnoreCase)
+                                                    || u.Email.Equals(commit.author.name, StringComparison.InvariantCultureIgnoreCase)
+                                                    || u.Fullname.Equals(commit.author.name, StringComparison.InvariantCultureIgnoreCase)) : null;
+                                            }
+                                            var timeEntry = new IssueTimeTracking();
+                                            timeEntry.IssueId = issue.Id;
+                                            timeEntry.ProjectId = issue.Entity.ProjectId;
+                                            timeEntry.Comment = codeCommit.Comment.ToMax(1990);
+                                            timeEntry.EntryDate = DateTime.Now;
+                                            timeEntry.Hours = m.Value.Substring(0, 2).ToInt();
+                                            timeEntry.Minutes = m.Value.Substring(3, 2).ToInt();
+                                            timeEntry.TimeTypeId = timeTypes[0].Entity.Id;
+                                            timeEntry.UserId = user == null ? Countersoft.Gemini.Commons.Constants.SystemAccountUserId : user.Id;
+                                            TimeTrackingManager.Create(timeEntry);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception timeEx)
+                            {
+                                LogManager.LogError(timeEx, "GitHub - Time log");
+                            }
                         }
                     }
                 }

@@ -177,7 +177,7 @@ namespace Saucery
 
                     if (matches.Count > 0)
                     {
-                        foreach (var match in matches)
+                        foreach (Match match in matches)
                         {
                             IssueDto issue = IssueManager.Get(match.ToString().Remove(0, 4).ToInt());
                             if (issue != null)
@@ -194,6 +194,42 @@ namespace Saucery
                                     allCommits.Add(GeminiContext.CodeCommits.Create(newCodeCommit));
 
                                     issueAdded.Add(issue.Id);
+
+                                    try
+                                    {
+                                        if (match.Index + match.Length + 1 + 5 <= commit.message.Length)
+                                        {
+                                            var time = commit.message.Substring(match.Index + match.Length + 1, 5);
+                                            var timeEx = new System.Text.RegularExpressions.Regex("[0-9][0-9]:[0-9][0-9]");
+                                            var m = timeEx.Match(time);
+                                            if (m.Success)
+                                            {
+                                                // Okay, log time!
+                                                var timeTypes = MetaManager.TimeTypeGetAll(issue.Project.TemplateId);
+                                                if (timeTypes.Count > 0)
+                                                {
+                                                    // Let's try and find the user
+                                                    var user = commit.author.HasValue() ? Cache.Users.Find(u => u.Username.Equals(commit.author, StringComparison.InvariantCultureIgnoreCase)
+                                                        || u.Email.Equals(commit.author, StringComparison.InvariantCultureIgnoreCase)
+                                                        || u.Fullname.Equals(commit.author, StringComparison.InvariantCultureIgnoreCase)) : null;
+                                                    var timeEntry = new IssueTimeTracking();
+                                                    timeEntry.IssueId = issue.Id;
+                                                    timeEntry.ProjectId = issue.Entity.ProjectId;
+                                                    timeEntry.Comment = commit.message.ToMax(1990);
+                                                    timeEntry.EntryDate = DateTime.Now;
+                                                    timeEntry.Hours = m.Value.Substring(0, 2).ToInt();
+                                                    timeEntry.Minutes = m.Value.Substring(3, 2).ToInt();
+                                                    timeEntry.TimeTypeId = timeTypes[0].Entity.Id;
+                                                    timeEntry.UserId = user == null ? Countersoft.Gemini.Commons.Constants.SystemAccountUserId : user.Id;
+                                                    TimeTrackingManager.Create(timeEntry);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception timeEx)
+                                    {
+                                        LogManager.LogError(timeEx, "BitBucket - Time log");
+                                    }
                                 }
                             }
                             else
@@ -399,3 +435,7 @@ namespace Saucery
     }
    
 }
+//https://confluence.atlassian.com/bitbucket/write-brokers-services-for-bitbucket-cloud-222724121.html
+//https://confluence.atlassian.com/bitbucket/event-payloads-740262817.html#EventPayloads-entity_repository
+//https://confluence.atlassian.com/bitbucket/event-payloads-740262817.html#EventPayloads-Push
+//https://confluence.atlassian.com/bitbucket/manage-bitbucket-cloud-services-221449732.html

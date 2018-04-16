@@ -146,6 +146,7 @@ namespace Saucery
         public SauceryController()
         {
             InitiateSSLTrust();
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
             
             diffBuilder = new SideBySideDiffBuilder(new Differ());
         }

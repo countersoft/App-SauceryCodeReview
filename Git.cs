@@ -14,6 +14,7 @@ using Countersoft.Gemini;
 using Countersoft.Gemini.Contracts;
 using Countersoft.Gemini.Commons.Dto;
 using Countersoft.Gemini.Commons.System;
+using RestSharp.Authenticators;
 
 namespace Saucery
 {

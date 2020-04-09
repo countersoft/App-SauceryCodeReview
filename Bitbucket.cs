@@ -25,6 +25,7 @@ using System.Text.RegularExpressions;
 using Countersoft.Gemini.Infrastructure.Apps;
 using Countersoft.Gemini.Infrastructure;
 using System.Web.Mvc;
+using RestSharp.Authenticators;
 
 namespace Saucery
 {

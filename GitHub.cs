@@ -439,7 +439,7 @@ namespace Saucery
     public class GitHubController : BaseApiController
     {
         [System.Web.Mvc.HttpPost]
-        public string Commit(CommitObject commits)
+        public string Commit(CommitObject commits, [FromUri] string token)
         {
             string apikey = string.Empty;
             string result = string.Empty;
@@ -456,6 +456,10 @@ namespace Saucery
                 {
                     apikey = authDetails[0];
                 }
+            }
+            else if(token != null)
+            {
+                apikey = token;
             }
 
             if (apikey.Length == 0 || GeminiApp.Config.ApiKey.Length == 0 || !apikey.StartsWith(GeminiApp.Config.ApiKey, StringComparison.InvariantCultureIgnoreCase))
@@ -636,7 +640,7 @@ namespace Saucery
             public string name { get; set; }
             public int size { get; set; }
             public string url { get; set; }
-            public string PRIVATE { get; set; }
+            public bool PRIVATE { get; set; }
         }
 
         public class CommitObject

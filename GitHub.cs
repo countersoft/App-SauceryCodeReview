@@ -191,7 +191,8 @@ namespace Saucery
             RestClient client = new RestClient(url);
             
             RestSharp.RestRequest request = new RestSharp.RestRequest(method);
-            
+            request.AddHeader("Authorization", string.Concat("token ", AccessToken));
+
             var response = client.Execute(request);
 
             if (DebugConstant.DebugModeState)

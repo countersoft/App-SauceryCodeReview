@@ -171,7 +171,7 @@ namespace Saucery
 
             try
             {
-                response = GetResponse(string.Format("{0}/git/blobs/{1}?access_token={2}", repositoryUrl, fileId, AccessToken), RestSharp.Method.GET);
+                response = GetResponse(string.Format("{0}/git/blobs/{1}", repositoryUrl, fileId), RestSharp.Method.GET);
                 
                 result = Encoding.Default.GetString(Convert.FromBase64String(response.Content.FromJson<GitHubFileContent>().content));
             }
@@ -375,17 +375,17 @@ namespace Saucery
                         // If there are empty fielid's go and get them
                         if (emptyFileIds.Count() > 0)
                         {
-                            var githubCommit = GetResponse(string.Concat(data.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos"), "/git/commits/", revisionId, "?access_token=", AccessToken), RestSharp.Method.GET);
+                            var githubCommit = GetResponse(string.Concat(data.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos"), "/git/commits/", revisionId), RestSharp.Method.GET);
                             
                             var githubCommitJson = githubCommit.Content.FromJson<TreeUrl>();
 
-                            var githubPreviousCommit = GetResponse(string.Concat(data.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos"), "/git/commits/", githubCommitJson.parents.First().sha, "?access_token=", AccessToken), RestSharp.Method.GET);
+                            var githubPreviousCommit = GetResponse(string.Concat(data.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos"), "/git/commits/", githubCommitJson.parents.First().sha), RestSharp.Method.GET);
                             
                             var githubPreviousCommitJson = githubPreviousCommit.Content.FromJson<TreeUrl>();
 
-                            var githubCommitTree = GetResponse(string.Concat(githubCommitJson.tree.url, "?recursive=1", "&access_token=", AccessToken), RestSharp.Method.GET);
+                            var githubCommitTree = GetResponse(string.Concat(githubCommitJson.tree.url, "?recursive=1"), RestSharp.Method.GET);
                             
-                            var githubPreviousCommitTree = GetResponse(string.Concat(githubPreviousCommitJson.tree.url, "?recursive=1", "&access_token=", AccessToken), RestSharp.Method.GET);
+                            var githubPreviousCommitTree = GetResponse(string.Concat(githubPreviousCommitJson.tree.url, "?recursive=1"), RestSharp.Method.GET);
 
                             var gitCommitTreeJson = githubCommitTree.Content.FromJson<TreeFiles>();
                             

@@ -132,6 +132,7 @@ namespace Saucery
     AppKey("Saucery"),
     AppName("Saucery"),
     AppDescription("Saucery"),
+    AppIcon("code"),
     AppRequiresConfigScreen(false)]
     [ValidateInput(false)]
     [OutputCache(Duration = 0, NoStore = false, Location = OutputCacheLocation.None)]

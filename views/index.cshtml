@@ -77,8 +77,8 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-
-        $("#section-widget-18FE1D21-77G0-4067-8A10-F452FCB9D090 h3").html("Code Review (" + @Model.Value.Count + ")");
+        var icon = $("#section-widget-18FE1D21-77G0-4067-8A10-F452FCB9D090 h3 i");
+        $("#section-widget-18FE1D21-77G0-4067-8A10-F452FCB9D090 h3").html(" Code Review (" + @Model.Value.Count + ")").prepend(icon);
 
     function removeAuthForm() {
         $('.files-expanded form').prev().remove();

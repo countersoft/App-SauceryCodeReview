@@ -3,10 +3,10 @@
     <name>Saucery</name>
     <description>Saucery</description>
     <version-major>7</version-major>
-    <version-minor>0</version-minor>
-    <version-patch>3</version-patch>
+    <version-minor>5</version-minor>
+    <version-patch>0</version-patch>
     <publisher>Countersoft</publisher>
-    <released>2020-04-10T09:00:00Z</released>
+    <released>2025-04-13T09:00:00Z</released>
     <javascript></javascript>
     <debug>false</debug>
 </app>

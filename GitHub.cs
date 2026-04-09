@@ -167,7 +167,11 @@ namespace Saucery
 
             RestSharp.IRestResponse response;
             
-            repositoryUrl = repositoryUrl.Replace("https://api.github.com","https://api.github.com/repos");
+            // Defensive: old rows may have been stored either with or without "/repos/" depending on the
+            // webhook payload format at the time. Strip then re-add so the result is always exactly one "/repos/".
+            repositoryUrl = repositoryUrl
+                .Replace("https://api.github.com/repos/", "https://api.github.com/")
+                .Replace("https://api.github.com", "https://api.github.com/repos");
 
             try
             {
@@ -210,9 +214,11 @@ namespace Saucery
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                GeminiApp.LogException(new FileNotFoundException(response.Content) { Source = SourceControlProvider.SVN.ToString() }, false);
-                
-                throw new FileNotFoundException(response.Content);
+                var notFoundMessage = string.Format("GitHub returned 404 for URL: {0} - Response: {1}", url, response.Content);
+
+                GeminiApp.LogException(new FileNotFoundException(notFoundMessage) { Source = SourceControlProvider.GitHub.ToString() }, false);
+
+                throw new FileNotFoundException(notFoundMessage);
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
@@ -232,7 +238,13 @@ namespace Saucery
         {
             StringBuilder form = new StringBuilder();
             
-            form.Append(string.Format("<div class='hardBreak'><a href='{0}'>{0}<a></div>", repositoryURL.Replace("api.github.com","github.com")));
+            // Convert the stored API URL back to the human-facing GitHub URL. Strip "/repos/" defensively
+            // so old rows stored as https://api.github.com/repos/owner/repo render as https://github.com/owner/repo.
+            var humanRepositoryUrl = repositoryURL
+                .Replace("api.github.com/repos/", "github.com/")
+                .Replace("api.github.com", "github.com");
+
+            form.Append(string.Format("<div class='hardBreak'><a href='{0}'>{0}<a></div>", humanRepositoryUrl));
             
             form.Append(string.Format("<form id='authentication_form' action='apps/saucery/authenticate/{0}' method='post'>", SourceControlProvider.GitHub));
             
@@ -375,11 +387,17 @@ namespace Saucery
                         // If there are empty fielid's go and get them
                         if (emptyFileIds.Count() > 0)
                         {
-                            var githubCommit = GetResponse(string.Concat(data.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos"), "/git/commits/", revisionId), RestSharp.Method.GET);
-                            
+                            // Defensive: old rows may have been stored either with or without "/repos/" depending on the
+                            // webhook payload format at the time. Strip then re-add so the result always has exactly one "/repos/".
+                            var apiBaseUrl = data.RepositoryUrl
+                                .ReplaceIgnoreCase("https://api.github.com/repos/", "https://api.github.com/")
+                                .ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos");
+
+                            var githubCommit = GetResponse(string.Concat(apiBaseUrl, "/git/commits/", revisionId), RestSharp.Method.GET);
+
                             var githubCommitJson = githubCommit.Content.FromJson<TreeUrl>();
 
-                            var githubPreviousCommit = GetResponse(string.Concat(data.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos"), "/git/commits/", githubCommitJson.parents.First().sha), RestSharp.Method.GET);
+                            var githubPreviousCommit = GetResponse(string.Concat(apiBaseUrl, "/git/commits/", githubCommitJson.parents.First().sha), RestSharp.Method.GET);
                             
                             var githubPreviousCommitJson = githubPreviousCommit.Content.FromJson<TreeUrl>();
 
@@ -510,7 +528,12 @@ namespace Saucery
                 if (matches.Count > 0)
                 {
 
-                    var baseUrl = commits.repository.url.ReplaceIgnoreCase("https://github.com/", "https://api.github.com/");
+                    // GitHub's webhook payload now puts the API URL (https://api.github.com/repos/owner/repo) in repository.url
+                    // rather than the html URL (https://github.com/owner/repo). Normalize both shapes to the canonical
+                    // https://api.github.com/owner/repo form so the call sites that prepend "/repos" still work.
+                    var baseUrl = commits.repository.url
+                        .ReplaceIgnoreCase("https://github.com/", "https://api.github.com/")
+                        .ReplaceIgnoreCase("https://api.github.com/repos/", "https://api.github.com/");
 
                     List<string> filesModified = new List<string>();
 

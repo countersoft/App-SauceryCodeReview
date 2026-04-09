@@ -26,6 +26,7 @@ using Countersoft.Gemini;
 using System.Net;
 using System.Net.Security;
 using System.Web.UI;
+using System.IO;
 
 namespace Saucery
 {
@@ -299,7 +300,11 @@ namespace Saucery
 
                     if (commit.Provider == SourceControlProvider.GitHub)
                     {
-                        dataHolder.commits.ExtraData = dataHolder.commits.RepositoryUrl.ReplaceIgnoreCase("https://api.github.com", "https://github.com");
+                        // Convert the stored API URL back to the human-facing GitHub URL. Strip "/repos/" defensively
+                        // so old rows stored as https://api.github.com/repos/owner/repo render as https://github.com/owner/repo.
+                        dataHolder.commits.ExtraData = dataHolder.commits.RepositoryUrl
+                            .ReplaceIgnoreCase("https://api.github.com/repos/", "https://github.com/")
+                            .ReplaceIgnoreCase("https://api.github.com", "https://github.com");
                     }
 
                     dataHolder.Provider = commit.Provider;
@@ -425,14 +430,26 @@ namespace Saucery
                         catch (UnauthorizedAccessException ex)
                         {
                             authenticateForm = github.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
-                            
+
                             errorMessage = "Invalid login details";
+                        }
+                        catch (FileNotFoundException ex)
+                        {
+                            GeminiApp.LogException(ex, false);
+
+                            errorMessage = "Unable to load diff: the commit, file, or repository could not be found on GitHub. It may have been removed, renamed, force-pushed, or you may no longer have access to it.";
+                        }
+                        catch (Exception ex)
+                        {
+                            GeminiApp.LogException(ex, false);
+
+                            errorMessage = "Unable to load diff from GitHub. See server logs for details.";
                         }
                     }
                     else
                     {
                         authenticateForm = github.CreateAuthenticationForm(UserContext.Url, repositoryUrl, fileName);
-                        
+
                         errorMessage = "Invalid login details";
                     }
 

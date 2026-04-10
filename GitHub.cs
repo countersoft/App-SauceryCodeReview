@@ -170,8 +170,8 @@ namespace Saucery
             // Defensive: old rows may have been stored either with or without "/repos/" depending on the
             // webhook payload format at the time. Strip then re-add so the result is always exactly one "/repos/".
             repositoryUrl = repositoryUrl
-                .Replace("https://api.github.com/repos/", "https://api.github.com/")
-                .Replace("https://api.github.com", "https://api.github.com/repos");
+                .ReplaceIgnoreCase("https://api.github.com/repos/", "https://api.github.com/")
+                .ReplaceIgnoreCase("https://api.github.com", "https://api.github.com/repos");
 
             try
             {
@@ -241,8 +241,8 @@ namespace Saucery
             // Convert the stored API URL back to the human-facing GitHub URL. Strip "/repos/" defensively
             // so old rows stored as https://api.github.com/repos/owner/repo render as https://github.com/owner/repo.
             var humanRepositoryUrl = repositoryURL
-                .Replace("api.github.com/repos/", "github.com/")
-                .Replace("api.github.com", "github.com");
+                .ReplaceIgnoreCase("api.github.com/repos/", "github.com/")
+                .ReplaceIgnoreCase("api.github.com", "github.com");
 
             form.Append(string.Format("<div class='hardBreak'><a href='{0}'>{0}<a></div>", humanRepositoryUrl));
             
